@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:race_timing_app/bloc/login_bloc.dart';
-import 'package:race_timing_app/services/authentication_service.dart';
+import 'package:race_timing_app/bloc/app/app_bloc_provider.dart';
+import 'package:race_timing_app/bloc/login/login_bloc.dart';
+import 'package:race_timing_app/bloc/login/login_event.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -12,15 +13,23 @@ class _LoginState extends State<Login> {
   LoginBloc _loginBloc;
 
   @override
-  void initState() {
-    super.initState();
-    _loginBloc = LoginBloc(AuthenticationService());
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loginBloc = AppBlocProvider.of(context).appBloc.loginBloc;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Login"), automaticallyImplyLeading: false),
+      appBar: AppBar(
+        bottom: PreferredSize(
+            child: Icon(
+              Icons.account_circle,
+              size: 88.0,
+              color: Colors.white,
+            ),
+            preferredSize: Size.fromHeight(40.0)),
+      ),
       body: SafeArea(
           child: SingleChildScrollView(
         padding:
@@ -67,12 +76,12 @@ class _LoginState extends State<Login> {
 
   Widget _buildLoginAndCreateButtons() {
     return StreamBuilder(
-      initialData: 'Login',
-      stream: _loginBloc.loginOrCreateButton,
+      initialData: ShowLoginBtnEvent(),
+      stream: _loginBloc.loginOrSignUpBtn,
       builder: ((BuildContext context, AsyncSnapshot snapshot) {
-        if (snapshot.data == 'Login') {
+        if (snapshot.data is ShowLoginBtnEvent) {
           return _buttonsLogin();
-        } else if (snapshot.data == 'Create Account') {
+        } else if (snapshot.data is ShowSignUpBtnEvent) {
           return _buttonsCreateAccount();
         }
       }),
@@ -93,14 +102,15 @@ class _LoginState extends State<Login> {
             color: Colors.lightGreen.shade200,
             disabledColor: Colors.grey.shade100,
             onPressed: snapshot.data
-                ? () => _loginBloc.loginOrCreateChanged.add('Login')
+                ? () =>
+                    _loginBloc.loginOrCreateChanged.add(LoginSelectedEvent())
                 : null,
           ),
         ),
         FlatButton(
           child: Text('Create Account'),
           onPressed: () {
-            _loginBloc.loginOrCreateButtonChanged.add('Create Account');
+            _loginBloc.switchLoginSignUpBtn.add(ShowSignUpBtnEvent());
           },
         ),
       ],
@@ -121,14 +131,15 @@ class _LoginState extends State<Login> {
             color: Colors.lightGreen.shade200,
             disabledColor: Colors.grey.shade100,
             onPressed: snapshot.data
-                ? () => _loginBloc.loginOrCreateChanged.add('Create Account')
+                ? () =>
+                    _loginBloc.loginOrCreateChanged.add(SignUpSelectedEvent())
                 : null,
           ),
         ),
         FlatButton(
           child: Text('Login'),
           onPressed: () {
-            _loginBloc.loginOrCreateButtonChanged.add('Login');
+            _loginBloc.switchLoginSignUpBtn.add(ShowSignUpBtnEvent());
           },
         ),
       ],

@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:race_timing_app/bloc/login/login_event.dart';
 import 'package:race_timing_app/classes/validators.dart';
+import 'package:race_timing_app/models/user.dart';
 import 'package:race_timing_app/services/authentication_api.dart';
 
 class LoginBloc with Validators {
@@ -22,13 +24,17 @@ class LoginBloc with Validators {
   Sink<bool> get enableLoginCreateButtonChanged => _enableLoginCreateButtonController.sink;
   Stream<bool> get enableLoginCreateButton => _enableLoginCreateButtonController.stream;
 
-  final StreamController<String> _loginOrCreateButtonController = StreamController<String>();
-  Sink<String> get loginOrCreateButtonChanged => _loginOrCreateButtonController.sink;
-  Stream<String> get loginOrCreateButton => _loginOrCreateButtonController.stream;
+  final StreamController<SwitchBetweenLoginAndSignUpBtnEvent> _switchLoginSignUpBtnController = StreamController<SwitchBetweenLoginAndSignUpBtnEvent>.broadcast();
+  Sink<SwitchBetweenLoginAndSignUpBtnEvent> get switchLoginSignUpBtn => _switchLoginSignUpBtnController.sink;
+  Stream<SwitchBetweenLoginAndSignUpBtnEvent> get loginOrSignUpBtn => _switchLoginSignUpBtnController.stream;
 
-  final StreamController<String> _loginOrCreateController = StreamController<String>();
-  Sink<String> get loginOrCreateChanged => _loginOrCreateController.sink;
-  Stream<String> get loginOrCreate => _loginOrCreateController.stream;
+  final StreamController<LoginEvent> _loginOrCreateController = StreamController<LoginEvent>();
+  Sink<LoginEvent> get loginOrCreateChanged => _loginOrCreateController.sink;
+  Stream<LoginEvent> get loginOrCreate => _loginOrCreateController.stream;
+
+  final StreamController<User> _loggedInUserController = StreamController<User>();
+  Sink<User> get addLoggedInUser => _loggedInUserController.sink;
+  Stream<User> get getLoggedInUser => _loggedInUserController.stream;
 
   LoginBloc(this.authenticationApi) {
     _startListenersIfEmailPasswordAreValid();
@@ -38,7 +44,8 @@ class LoginBloc with Validators {
     _emailController.close();
     _passwordController.close();
     _enableLoginCreateButtonController.close();
-    _loginOrCreateButtonController.close();
+    _switchLoginSignUpBtnController.close();
+    _loggedInUserController.close();
     _loginOrCreateController.close();
   }
 
@@ -62,7 +69,7 @@ class LoginBloc with Validators {
       _updateEnableLoginCreateButtonStream();
     });
     loginOrCreate.listen((action) {
-      action == 'Login' ? _logIn() : _createAccount();
+      action is LoginSelectedEvent ? _logIn() : _createAccount();
     });
   }
 
@@ -78,12 +85,13 @@ class LoginBloc with Validators {
   Future<String> _logIn() async {
     String _result = '';
     if(_emailValid && _passwordValid) {
-      await authenticationApi.authenticate(email: _email, password: _password).then((user) {
+      await authenticationApi.logIn(email: _email, password: _password).then((user) {
         print("success");
         _result = 'Success';
+        addLoggedInUser.add(user);
       }).catchError((error) {
-        print('Login error: $error');
-        _result = error;
+        print('Login error: ${error.message}');
+        _result = error.message;
       });
       return _result;
     } else {

@@ -4,11 +4,10 @@ import 'package:race_timing_app/models/user.dart';
 
 abstract class AuthenticationApi {
 
-  Stream<User> get onAuthStateChanged;
+  Future<User> logIn({String email, String password});
 
-  Future<User> authenticate({String email, String password});
+  Future<bool> logOut(User user);
 
-  Future<void> logOut();
+  Future<bool> signUp(String token);
 
-  void close();
 }

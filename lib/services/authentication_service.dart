@@ -7,27 +7,18 @@ import 'package:race_timing_app/models/user.dart';
 import 'package:race_timing_app/services/authentication_api.dart';
 
 class AuthenticationService implements AuthenticationApi {
-  static final AuthenticationService _authService =
-      AuthenticationService._internal(http.Client());
-  http.Client client;
+  http.Client client = http.Client();
 
-  factory AuthenticationService() {
-    return _authService;
-  }
-
-  AuthenticationService._internal(this.client);
-
-  static const String host = "https://baa86b9e.ngrok.io";
-  final String loginUrl = '$host/api/login';
-
-  final StreamController<User> _authStateController = StreamController<User>();
-
-  Sink<User> get updateAuthState => _authStateController.sink;
-
-  Stream<User> get onAuthStateChanged => _authStateController.stream;
+  static const String host = 'https://3ad524cc.ngrok.io/api';
+  final String loginUrl = '$host/login';
+  final String logOutUrl = '$host/logout';
+  final Map<String, String> headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  };
 
   @override
-  Future<User> authenticate({String email, String password}) async {
+  Future<User> logIn({String email, String password}) async {
     http.Response res = await client.post(loginUrl,
         headers: {"Content-Type": "application/json"},
         body: LoginRequest(email, password).toJson());
@@ -35,9 +26,7 @@ class AuthenticationService implements AuthenticationApi {
     if (res.statusCode == 200) {
       String token = res.headers["authorization"];
       var response = jsonDecode(res.body);
-      User user =
-          User(token: token, id: response["id"], email: response["email"]);
-      updateAuthState.add(user);
+      User user = User(token: token, id: response["id"], email: response["email"]);
       return user;
     } else {
       throw Exception("Please check the login details provided.");
@@ -45,13 +34,19 @@ class AuthenticationService implements AuthenticationApi {
   }
 
   @override
-  Future<void> logOut() {
-    // TODO: implement logOut
+  Future<bool> logOut(User user) async {
+    http.Response res = await client.delete(logOutUrl, headers: {'Authorization': '${user.token}'});
+    if (res.statusCode == 204) {
+      return true;
+    } else {
+      throw Exception("failed to logout");
+    }
+  }
+
+  @override
+  Future<bool> signUp(String token) {
+    // TODO: implement signUp
     return null;
   }
 
-  void close() {
-    client.close();
-    _authStateController.close();
-  }
 }
