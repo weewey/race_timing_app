@@ -3,7 +3,7 @@ abstract class LoginEvent {}
 class LoginSelectedEvent implements LoginEvent{}
 class SignUpSelectedEvent implements LoginEvent{}
 
-abstract class SwitchBetweenLoginAndSignUpBtnEvent {}
+abstract class DisplayLoginOrSignUpFormEvent {}
 
-class ShowLoginBtnEvent implements SwitchBetweenLoginAndSignUpBtnEvent{}
-class ShowSignUpBtnEvent implements SwitchBetweenLoginAndSignUpBtnEvent{}
+class DisplayLoginFormEvent implements DisplayLoginOrSignUpFormEvent{}
+class DisplaySignUpEvent implements DisplayLoginOrSignUpFormEvent{}
